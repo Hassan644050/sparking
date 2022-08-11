@@ -9,36 +9,26 @@ config_path = my_path.parent/'config/etl_config.yaml'
 with config_path.open() as config_file:
     config = yaml.safe_load(config_file)
 
-# spark = SparkSession.builder \
-#                     .master('local[1]') \
-#                     .appName('SparkByExamples.com') \
-#                     .getOrCreate()
-
 spark = SparkSession \
         .builder \
+        .master("local[2]") \
         .appName("LocalQuery") \
         .config("spark.executor.heartbeatInterval", "100000ms") \
-        .config("spark.driver.extraClassPath","H:/BigData/spark/jars") \
+        .config("spark.driver.extraClassPath",str(config['spark']['jar_directory'])) \
         .config("spark.driver.memory", "5G") \
         .config("spark.executor.memory", "10G") \
         .getOrCreate()
-print(spark)
 
-print(config['spark']['jar_directory'])
-print(config['database']['sqlserver']['url'])
-print(config['database']['sqlserver']['name'])
+url=str(config['database']['sqlserver']['url'])
+dbName=str(config['database']['sqlserver']['name'])
+userName=str(config['database']['sqlserver']['username'])
+password1=str(config['database']['sqlserver']['password'])
 
-def get_table_data(table_name):
-    jbdcurl = config['database']['sqlserver']['url'] + config['database']['sqlserver']['name']
-    properties = {"user": config['database']['sqlserver']['username'],"password": config['database']['sqlserver']['password'],"driver": config['database']['password']['driver']}
-    data = spark.read.jdbc(url=jbdcurl,table=table_name,properties=properties)
+def get_table_data_qa(url,dbName,username,password):
+    jbdcurl = url+dbName
+    properties = {"user": username,"password": password,"driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"}
+    data = spark.read.jdbc(url=jbdcurl,table="Division",properties=properties)
     return data
 
-def get_table_data_qa():
-    jbdcurl = "jdbc:sqlserver://localhost:1433;databaseName=EShopOnHand_V4"
-    properties = {"user": "sa","password": "12345","driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"}
-    data = spark.read.jdbc(url=jbdcurl,table="VendorProduct",properties=properties)
-    return data
-
-data=get_table_data_qa()
+data=get_table_data_qa(url,dbName,userName,password1)
 data.show()
